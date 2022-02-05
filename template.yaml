@@ -24,19 +24,24 @@ Resources:
           Properties:
             Path: /activity
             Method: get
-
-  RouteTestFunctionName:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/
-      Handler: app_route.lambda_handler
-      Runtime: python3.8
-      Events:
         RouteTest:
           Type: Api
           Properties:
-            Path: /activity/{name}
+            Path: /activity/{month}
             Method: get
+
+  # RouteTestFunctionName:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: src/
+  #     Handler: app_route.lambda_handler
+  #     Runtime: python3.8
+  #     Events:
+  #       RouteTest:
+  #         Type: Api
+  #         Properties:
+  #           Path: /activity/{name}
+  #           Method: get
 
 Outputs:
   TestApi:

@@ -4,7 +4,7 @@ def display(days):
     return{
         "status code": 200,
         "body": json.dumps({
-            "message": f"Winter is coming in {days} days!!!"
+            "message": f"Winter is coming in {days} ....!!!"
         })
     }
 
