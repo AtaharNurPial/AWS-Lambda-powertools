@@ -1,22 +1,38 @@
-import json
+# import json
+import logging
+import os
 from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver
+from pythonjsonlogger import jsonlogger
 
+'''creating logger application named App'''
+logger = logging.getLogger("App")
+'''declaring handler and formatter'''
+logHandler = logging.StreamHandler()
+#passing custom fields to the jsonFormatter
+formatter = jsonlogger.JsonFormatter(fmt="%(asctime)s %(levelname)s %(name)s %(message)s")
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+'''setting the logging level in the env_variable'''
+logger.setLevel(os.getenv("LOG_LEVEL", "INFO"))
 
 app = ApiGatewayResolver()
 
 @app.get("/activity/<month>")
 def display_month(month):
+    logger.info(f"Request for changing month to {month} received...")
     return{
         "message": f"Winter is coming in {month}...!!!"
     }
 
 @app.get("/activity")
 def display():
+    logger.info("Message received...")
     return{
         "message": "winter is coming..."
     }
 
 def lambda_handler(event, context):
+    logger.debug(event)
     return app.resolve(event, context)
 
 # def display(**kargs):
