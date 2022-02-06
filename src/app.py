@@ -3,6 +3,8 @@
 # import logging
 # import os
 # from pythonjsonlogger import jsonlogger
+'''tracer dependency'''
+from aws_xray_sdk.core import xray_recorder
 '''powertool dependencies'''
 from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver
 from aws_lambda_powertools import Logger
@@ -10,7 +12,7 @@ from aws_lambda_powertools.logging import correlation_paths
 
 
 #adding powertool logger.
-logger = Logger(service="Powertool_Logger_App")
+logger = Logger(service = "Powertool_Logger_App")
 '''Don't need to use any of these if we use powertool logger....'''
 '''creating logger application named App'''
 # logger = logging.getLogger("Json_Logger_App")
@@ -25,14 +27,18 @@ logger = Logger(service="Powertool_Logger_App")
 
 app = ApiGatewayResolver()
 
+'''routing decorator then tracer decorator'''
 @app.get("/activity/<month>")
+@xray_recorder.capture('display_month')
 def display_month(month):
     logger.info(f"Request for changing month to {month} received...")
     return{
         "message": f"Winter is coming in {month}...!!!"
     }
-
+    
+'''routing decorator then tracer decorator'''
 @app.get("/activity")
+@xray_recorder.capture('display')
 def display():
     logger.info("Message received...")
     return{
@@ -42,7 +48,8 @@ def display():
 '''using logger.inject_lambda_context decorator to inject key 
 information from Lambda context into every log.
 also setting log_event=True to automatically log each incoming request for debugging'''
-@logger.inject_lambda_context(correlation_id_path=correlation_paths.API_GATEWAY_REST, log_event= True)
+@logger.inject_lambda_context(correlation_id_path = correlation_paths.API_GATEWAY_REST, log_event = True)
+@xray_recorder.capture('handler')
 def lambda_handler(event, context):
     logger.debug(event)
     return app.resolve(event, context)

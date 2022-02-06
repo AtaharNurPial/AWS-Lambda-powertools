@@ -7,7 +7,9 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 10
+  Api:
+    TracingEnabled: true
 
 Resources:
   TestFunction:
@@ -16,6 +18,7 @@ Resources:
       CodeUri: src/
       Handler: app.lambda_handler
       Runtime: python3.8
+      Tracing: Active
       Architectures:
         - x86_64
       Events:
@@ -29,19 +32,6 @@ Resources:
           Properties:
             Path: /activity/{month}
             Method: get
-
-  # RouteTestFunctionName:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     CodeUri: src/
-  #     Handler: app_route.lambda_handler
-  #     Runtime: python3.8
-  #     Events:
-  #       RouteTest:
-  #         Type: Api
-  #         Properties:
-  #           Path: /activity/{name}
-  #           Method: get
 
 Outputs:
   TestApi:
