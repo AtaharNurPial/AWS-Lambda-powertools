@@ -1,4 +1,4 @@
 # requests
 aws-lambda-powertools
 # python-json-logger
-aws-xray-sdk
+# aws-xray-sdk
