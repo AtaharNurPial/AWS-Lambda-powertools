@@ -32,6 +32,8 @@ Resources:
           Properties:
             Path: /activity/{month}
             Method: get
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
 
 Outputs:
   TestApi:
