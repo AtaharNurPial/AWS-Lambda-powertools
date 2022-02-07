@@ -6,20 +6,25 @@
 '''tracer dependency'''
 # from aws_xray_sdk.core import xray_recorder,patch_all
 '''necessery dependencies for metrics'''
-import os
-import boto3
+# import os
+# import boto3
 '''powertool dependencies'''
 from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver
-from aws_lambda_powertools import Logger, Tracer
+from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.logging import correlation_paths
+from aws_lambda_powertools.metrics import MetricUnit
 
-cold_start = True
-metric_namespace = "MyApp"
+# cold_start = True
+# '''creating a container for all metrics'''
+# metric_namespace = "MyApp"
 #adding powertool logger.
 logger = Logger(service = "Powertool_Logger_App")
 #adding powertool tracer
 tracer = Tracer(service = "Powertool_Tracer_App")
-metrics = boto3.client("cloudwatch")
+# adding powertool metric generator
+metrics = Metrics(namespace="Myapp", service= "Powertool_Metric_App")
+# cloudwatch client initialized
+# metrics = boto3.client("cloudwatch")
 '''Don't need to use any of these if we use powertool logger....'''
 '''creating logger application named App'''
 # logger = logging.getLogger("Json_Logger_App")
@@ -37,36 +42,36 @@ app = ApiGatewayResolver()
 # patch_all() 
 
 '''custom metrics generator'''
-@tracer.capture_method
-def add_greeting_metric(service: str = "Metric_App"):
-    function_name = os.getenv("AWS_LAMBDA_FUNCTION_NAME", "undefined")
-    service_dimension = {"Name": "service", "Value": service}
-    function_dimension = {"Name": "function_name", "Value": function_name}
-    is_cold_start = True
+# @tracer.capture_method
+# def add_greeting_metric(service: str = "Metric_App"):
+#     function_name = os.getenv("AWS_LAMBDA_FUNCTION_NAME", "undefined")
+#     service_dimension = {"Name": "service", "Value": service}
+#     function_dimension = {"Name": "function_name", "Value": function_name}
+#     is_cold_start = True
 
-    global cold_start
-    if cold_start:
-        cold_start = False
-    else:
-        is_cold_start = False
+#     global cold_start
+#     if cold_start:
+#         cold_start = False
+#     else:
+#         is_cold_start = False
 
-    return metrics.put_metric_data(
-        MetricData = [
-            {
-                "MetricName": "SuccessfullGreetings",
-                "Dimensions": [service_dimension],
-                "Unit": "Count",
-                "Value": 1,
-            },
-            {
-                "MetricName": "ColdStart",
-                "Dimensions": [service_dimension, function_dimension],
-                "Unit": "Count",
-                "Value": int(is_cold_start)
-            }
-        ],
-        Namespace = metric_namespace,
-    )
+#     return metrics.put_metric_data(
+#         MetricData = [
+#             {
+#                 "MetricName": "SuccessfullGreetings",
+#                 "Dimensions": [service_dimension],
+#                 "Unit": "Count",
+#                 "Value": 1,
+#             },
+#             {
+#                 "MetricName": "ColdStart",
+#                 "Dimensions": [service_dimension, function_dimension],
+#                 "Unit": "Count",
+#                 "Value": int(is_cold_start)
+#             }
+#         ],
+#         Namespace = metric_namespace,
+#     )
 
 '''routing decorator then tracer decorator'''
 @app.get("/activity/<month>")
@@ -77,7 +82,8 @@ def display_month(month):
     # subsegment.put_annotation(key = "User", value = month)
     tracer.put_annotation(key = "User", value = month)
     logger.info(f"Request for changing month to {month} received...")
-    add_greeting_metric()
+    metrics.add_metric(name = "SuccessfulGreeting", unit = MetricUnit.Count, value = 1)
+    # add_greeting_metric()
     return{
         "message": f"Winter is coming in {month}...!!!"
     }
@@ -90,7 +96,8 @@ def display():
     # subsegment.put_annotation(key = "User", value = "Message")
     tracer.put_annotation(key = "User", value = "Message")
     logger.info("Message received...")
-    add_greeting_metric()
+    metrics.add_metric(name="SuccessfulGreeting",unit=MetricUnit.Count,value=1)
+    # add_greeting_metric()
     return{
         "message": "winter is coming..."
     }
@@ -101,6 +108,7 @@ also setting log_event=True to automatically log each incoming request for debug
 @logger.inject_lambda_context(correlation_id_path = correlation_paths.API_GATEWAY_REST, log_event = True)
 # @xray_recorder.capture('handler')
 @tracer.capture_lambda_handler
+@metrics.log_metrics(capture_cold_start_metric=True)
 def lambda_handler(event, context):
     # global cold_start
     # subsegment = xray_recorder.current_subsegment()
@@ -109,10 +117,14 @@ def lambda_handler(event, context):
     #     cold_start = False
     # else:
     #     subsegment.put_annotation(key = "ColdStart", value = cold_start)
-    logger.debug(event)
+    # logger.debug(event)
     result = app.resolve(event, context)
     # subsegment.put_metadata("response", result)
-    return result
+    try:
+        return result
+    except Exception as e:
+        logger.exception(e)
+        raise
 
 #don't need any of these if we use powertools for api routing... SOOO EASY!!!!!
 # def display(**kargs):
