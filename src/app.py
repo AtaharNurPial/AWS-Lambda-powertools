@@ -95,6 +95,15 @@ def hiding_sensitive_data(handler, event, context, fields: List = None):
                 event[field] = obfuscate(event[field])
     return handler(event, context)
 
+@lambda_handler_decorator(trace_execution= True)
+def another_middleware(handler, event, context, hello = False ):
+    if hello:
+        print("------ Parameter Detected ------")
+    print("Saying hello before Handler is called")
+    response = handler(event, context)
+    print("Saying hello after Handle is called")
+    return response
+
 '''routing decorator next tracer decorator'''
 @app.get("/activity/<month>")
 # @xray_recorder.capture('display_month')
@@ -133,6 +142,7 @@ also setting log_event=True to automatically log each incoming request for debug
 @metrics.log_metrics(capture_cold_start_metric=True)
 @middleware_before_after
 @hiding_sensitive_data(fields=["email"])
+@another_middleware(hello=True)
 def lambda_handler(event, context):
     # global cold_start
     # subsegment = xray_recorder.current_subsegment()
