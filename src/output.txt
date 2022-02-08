@@ -1,0 +1,25 @@
+Output for normal json logger:
+//Outputs only the fields specified in the logger module. Have to specify manually.
+{
+    "asctime": "2022-02-06 03:50:42,314",
+    "levelname": "INFO",
+    "name": "Json_Logger_App",
+    "message": "Request for changing month to April received..."
+}
+
+Output for powertool logger:
+//displaying every key value infos.... less code efficient output.
+{
+    "level": "INFO",
+    "location": "display_month:30",
+    "message": "Request for changing month to December received...",
+    "timestamp": "2022-02-06 04:01:10,183+0000",
+    "service": "Powertool_Logger_App",
+    "cold_start": true,
+    "function_name": "lambda-powertool-TestFunction-eW0MMmHbwJa9",
+    "function_memory_size": "128",
+    "function_arn": "arn:aws:lambda:us-east-2:618758721119:function:lambda-powertool-TestFunction-eW0MMmHbwJa9",
+    "function_request_id": "513e4a4f-85f0-4d8b-90f4-9581bf1daeb8",
+    "correlation_id": "b50351c5-c0f9-4d80-8c93-706f4ad506d8",
+    "xray_trace_id": "1-61ff4805-146399ce45547e2d259c987b"
+}
