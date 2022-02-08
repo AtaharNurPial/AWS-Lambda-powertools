@@ -9,10 +9,12 @@
 # import os
 # import boto3
 '''powertool dependencies'''
+from typing import List
 from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver
 from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.logging import correlation_paths
 from aws_lambda_powertools.metrics import MetricUnit
+from aws_lambda_powertools.middleware_factory import lambda_handler_decorator
 
 # cold_start = True
 # '''creating a container for all metrics'''
@@ -73,7 +75,27 @@ app = ApiGatewayResolver()
 #         Namespace = metric_namespace,
 #     )
 
-'''routing decorator then tracer decorator'''
+'''creating middleware'''
+@lambda_handler_decorator(trace_execution= True)
+def middleware_before_after(handler, event, context):
+    #logic_before_handler_execution()
+    print("Saying hello before Handler is called...")
+    response = handler(event, context)
+    #logic_after_handler_execution()
+    print("saying hello after Handler is called...")
+    return response
+
+@lambda_handler_decorator(trace_execution= True)
+def hiding_sensitive_data(handler, event, context, fields: List = None):
+    tracer = Tracer()
+    tracer.put_annotation(key= "user", value= "Message")
+    if fields:
+        for field in fields:
+            if field in event:
+                event[field] = obfuscate(event[field])
+    return handler(event, context)
+
+'''routing decorator next tracer decorator'''
 @app.get("/activity/<month>")
 # @xray_recorder.capture('display_month')
 @tracer.capture_method
@@ -109,6 +131,8 @@ also setting log_event=True to automatically log each incoming request for debug
 # @xray_recorder.capture('handler')
 @tracer.capture_lambda_handler
 @metrics.log_metrics(capture_cold_start_metric=True)
+@middleware_before_after
+@hiding_sensitive_data(fields=["email"])
 def lambda_handler(event, context):
     # global cold_start
     # subsegment = xray_recorder.current_subsegment()
