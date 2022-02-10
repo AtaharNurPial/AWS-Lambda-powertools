@@ -1,11 +1,12 @@
 # powertools-quickstart
 
-This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
+This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. This application is mostly focuse on `aws-lambda-powertool`. Here you can find how to implement `logger` ,`tracer` and `custom metrices` using both `aws-sdk` and `aws-lambda-powertool` for your serverless application. It includes the following files and folders.
 
 - src - Code for the application's Lambda function.
 - events - Invocation events that you can use to invoke the function.
-- tests - Unit tests for the application code. 
+- tests - Unit tests for the application code. Test event will be added later.
 - template.yaml - A template that defines the application's AWS resources.
+- output.txt - A text file in the `src` folder to show the difference between CloudWatch log that is generated using `aws-sdk` and `aws-lambda-powertool`.
 
 The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
 
@@ -39,15 +40,29 @@ To build and deploy your application for the first time, run the following in yo
 ```bash
 sam build --use-container
 sam deploy --guided
+sam deploy -g
+```
+Both deploy command serves the same functionality. The first command will build the source of your application. If you are like me and didn't follow the post-installment procedure of Docker then you need to give `sudo` privilege to build application. In that case run the following in your shell:
+
+```bash
+sudo sam build --use-container
 ```
 
-The first command will build the source of your application. The second command will package and deploy your application to AWS, with a series of prompts:
+The deploy command will package and deploy your application to AWS, with a series of prompts:
 
 * **Stack Name**: The name of the stack to deploy to CloudFormation. This should be unique to your account and region, and a good starting point would be something matching your project name.
 * **AWS Region**: The AWS region you want to deploy your app to.
 * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
 * **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
 * **Save arguments to samconfig.toml**: If set to yes, your choices will be saved to a configuration file inside the project, so that in the future you can just re-run `sam deploy` without parameters to deploy changes to your application.
+
+Once deployed then you can just run the following to update the stack:
+
+```bash
+sam deploy
+```
+
+`samconfig.toml` file has all the neccessary configurations so you don't need to worry about the guided process over and over again.
 
 You can find your API Gateway Endpoint URL in the output values displayed after deployment.
 
@@ -57,6 +72,7 @@ Build your application with the `sam build --use-container` command.
 
 ```bash
 powertools-quickstart$ sam build --use-container
+powertools-quickstart$ sudo sam build --use-container
 ```
 
 The SAM CLI installs dependencies defined in `src/requirements.txt`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
@@ -67,6 +83,7 @@ Run functions locally and invoke them with the `sam local invoke` command.
 
 ```bash
 powertools-quickstart$ sam local invoke TestFunction --event events/event.json
+powertools-quickstart$ sudo sam local invoke TestFunction --event events/event.json
 ```
 
 The SAM CLI can also emulate your application's API. Use the `sam local start-api` to run the API locally on port 3000.
@@ -79,13 +96,21 @@ powertools-quickstart$ curl http://localhost:3000/
 The SAM CLI reads the application template to determine the API's routes and the functions that they invoke. The `Events` property on each function's definition includes the route and method for each path.
 
 ```yaml
-      Events:
+     Events:
         Test:
           Type: Api
           Properties:
             Path: /activity
             Method: get
+        RouteTest:
+          Type: Api
+          Properties:
+            Path: /activity/{month}
+            Method: get
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
 ```
+The `CloudWatchPutMetricPolicy` allows the lambda function to create new CloudWatch policy.
 
 ## Add a resource to your application
 The application template uses AWS Serverless Application Model (AWS SAM) to define application resources. AWS SAM is an extension of AWS CloudFormation with a simpler syntax for configuring common serverless application resources such as functions, triggers, and APIs. For resources not included in [the SAM specification](https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md), you can use standard [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html) resource types.
@@ -94,10 +119,10 @@ The application template uses AWS Serverless Application Model (AWS SAM) to defi
 
 To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs` lets you fetch logs generated by your deployed Lambda function from the command line. In addition to printing the logs on the terminal, this command has several nifty features to help you quickly find the bug.
 
-`NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
+`NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM. Just change the lambda function name and stack name.
 
 ```bash
-powertools-quickstart$ sam logs -n HelloWorldFunction --stack-name powertools-quickstart --tail
+powertools-quickstart$ sam logs -n TestFunction --stack-name lambda-powertools --tail
 ```
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
@@ -113,14 +138,16 @@ powertools-quickstart$ python -m pytest tests/unit -v
 # integration test, requiring deploying the stack first.
 # Create the env variable AWS_SAM_STACK_NAME with the name of the stack we are testing
 powertools-quickstart$ AWS_SAM_STACK_NAME=<stack-name> python -m pytest tests/integration -v
+
 ```
+There are basic test commands. The appropriate test event will be uploaded soon... ;)
 
 ## Cleanup
 
 To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
 
 ```bash
-aws cloudformation delete-stack --stack-name powertools-quickstart
+aws cloudformation delete-stack --stack-name lambda-powertools
 ```
 
 ## Resources
